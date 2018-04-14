@@ -8,15 +8,20 @@ public class BuildMode : MonoBehaviour {
     public Transform transparentSquare;
     public Transform map;
     public Grid grid;
+    public float maxRay;
+    public float gridSize;
 
-    private Vector3Int position;
+    private Vector3 position;
     private bool isBuildModeActive;
     private Transform square;
     private Vector3 testPoint;
-	// Use this for initialization
-	void Start () {
+
+    protected vThirdPersonCamera tpCamera;
+    // Use this for initialization
+    void Start () {
         isBuildModeActive = false;
-	}
+        tpCamera = FindObjectOfType<vThirdPersonCamera>();
+    }
 	
 	// Update is called once per frame
 	void Update () {
@@ -27,17 +32,18 @@ public class BuildMode : MonoBehaviour {
         if (isBuildModeActive)
         {
             RaycastHit hit;
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out hit))
+            Ray ray = new Ray(tpCamera.transform.position, tpCamera.transform.forward);
+            if (Physics.Raycast(ray, out hit, maxRay))
             {
-                Vector3Int finalPos;
+                Vector3 finalPos;
                 if (hit.transform.tag.Equals("BuildSquare"))
                 {
-                    finalPos = GetNearestCell(hit.point);
+                    finalPos = AlignAndGenerateSquare(hit.point);
                 }
                 else
                 {
                      finalPos = AlignAndGenerateSquare(hit.point);
+                    Debug.Log("hit: " + hit.point);
                 }
                 if(finalPos != position)
                 {
@@ -56,22 +62,25 @@ public class BuildMode : MonoBehaviour {
         }      
 	}
 
-    Vector3Int AlignAndGenerateSquare(Vector3 hitPoint)
+    Vector3 AlignAndGenerateSquare(Vector3 hitPoint)
     {
-        Vector3Int hitP = new Vector3Int((int) hitPoint.x, (int) hitPoint.y, (int) hitPoint.z);        
-        Vector3 cellPoint = grid.GetCellCenterWorld(hitP);
-        Vector3Int finalPosition = grid.WorldToCell(cellPoint);
 
+        float snapPointX = hitPoint.x + ((gridSize - hitPoint.x) % gridSize);
+        float snapPointY = hitPoint.y + 0.05f;
+        float snapPointZ = hitPoint.z + ((gridSize - hitPoint.z) % gridSize);
+
+        Vector3 gridPosition = new Vector3(snapPointX, snapPointY, snapPointZ);
+        Debug.Log("grid position:" + gridPosition);
+        return gridPosition;
             
-            
-        return finalPosition;
+        
     }
 
     Vector3Int GetNearestCell(Vector3 hitPoint)
     {
-        int xPoint = (int)(hitPoint.x + 0.5);
-        int yPoint = (int)(hitPoint.y + 0.5);
-        int zPoint = (int)(hitPoint.z + 0.5);
+        int xPoint = (int)hitPoint.x +2 ;
+        int yPoint = (int)(hitPoint.y);
+        int zPoint = (int)hitPoint.z;
 
         Vector3Int cellPoint = new Vector3Int(xPoint, yPoint, zPoint);
         Vector3 cellCenterWorldPoint = grid.GetCellCenterWorld(cellPoint);
